@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body {
+        font-family: Arial;
+        /* font-size:xx-large; */
+        color:midnightblue;
+        background-color:lightcyan;
+    }
+    
+    .form1 {
+        
+        float:left; 
+        vertical-align: middle;
+        
+        /*  text-align: center; */
+        /* left:50%; */
+        
+        transform: translate(120%,0);
+    }
+
+    button {
+        text-size:large
+    }
+
+    input {
+        height: 20px;
+        width: 20px;
+    }
+
+    .centered {
+        position: absolute;
+        /* top: 50%; */
+        vertical-align: middle;
+        /* left: 10%; */
+        /* transform: translate(-50%, -50%); */
+        text-align: center;
+    }
+</style>
+</head>
+
+<!-- div { padding: 10px; border: 1px solid black; }
+input { margin: 0; } -->
+
+<form method="get">
+    <button name="homeBtn" formaction="/login" type="submit" style="font-size:large">Logout</button>
+
+</form>
+
+<div class="centered">
+    <h1>Welcome {{p_name}}!</h1>
+    
+
+
+    <!--  {{user_image}}  -->
+    <form method="POST">
+        <!-- <input value={{p_id}} name="p_id"> -->
+
+    {% if is_checked == False %}
+        <input type="checkbox" name="showContours" onclick="this.form.submit()"> <p style="font-size:large; display:inline"> Show Outlined Organs </p>
+        <!-- <button type="submit" class="btn btn-default">Go</button> -->
+    {% else %}
+        <input type="checkbox" name="showContours" onclick="this.form.submit()" checked> <p style="font-size:large; display:inline"> Show Outlined Organs</p>
+    {% endif %}
+    
+    <!-- </select>
+    <button type="load" formaction="/" default=False class="btn btn-default" >Show Outlined Organs</button>  -->
+
+    </form>
+    <br>
+
+
+
+    
+    
+    <!-- <div id="form1"> -->
+        {% for row in rows_org %} 
+            
+                <!-- <td>{{row[1]}}</td> -->
+                
+                <form class="form1" action="/info" method = POST>
+                        <button type="submit" name="organ_butt" style="font-size:large;width:150px;height:40px;background-color:{{row[2]}};color:black" value="{{row[0]}}" ><b>{{row[1]}}</b></button>
+                </form>
+            
+            
+        {% endfor %}
+
+    </form>
+
+    
+    
+
+    <body>
+        <img src="{{ user_image }}" alt="User Image">
+    </body>
+
+</div>
+    <!-- <button name="contours" style="background-color:black;color:white;width:150px;height=40px" formaction="/image" type="submit">Larynx</button> -->
+
+    
+    </html>
+
+
+    
+    

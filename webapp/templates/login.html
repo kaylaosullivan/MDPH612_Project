@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+          font-family: Arial;
+          color:lightcyan;
+          background-color:slateblue;
+          text-align:center;
+          vertical-align:center;
+          font-size:x-large
+      }
+    input {
+      width:350px;
+      height:50px;
+      font-size:x-large
+    }
+  </style>
+    
+  </head>
+  <body>
+    <div class="container">
+      <h1>Please login</h1>
+      <br>
+      <form action="" method="post">
+        <input type="text"  class="input" placeholder="Name" name="username" value="{{
+          request.form.username }}" class="form-control input-lg">
+          <br>
+         <input type="password" placeholder="Password" name="password" value="{{
+          request.form.password }}"class="form-control input-lg">
+          <br>
+        <input class="btn btn-default" type="submit" value="Login" style="background-color:lightcyan"> 
+      </form>
+      {% if error %}
+        <p style="font-size:x-large" class="error"><strong>Error:</strong> {{ error }}
+      {% endif %}
+    </div>
+  </body>
+</html>
