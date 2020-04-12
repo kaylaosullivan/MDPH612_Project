@@ -3,19 +3,19 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+
 body {
   font-family: Arial;
   color:midnightblue;
   overflow:hidden
 }
+
 p { margin:5px }
 
 .orgname {
   font-family: Arial;
   color:{{rows_org[0][2]}}
 }
-
-
 
 .split {
   height: 100%;
@@ -47,25 +47,18 @@ p { margin:5px }
   text-align: center;
 }
 
-
 .centered img {
   width: 700px;
-  
 }
 </style>
 </head>
+
 <body>
-
-
 <div class="split left">
   <div class="centered">
-    
-    
     <img src="{{ user_image }}" alt="User Image">
     <div class="orgname">
       <h1>{{rows_org[0][1]}}</h1>
-      <!-- <p>Some text.</p> -->
-     
     </div>
   </div>
 </div>
@@ -73,7 +66,7 @@ p { margin:5px }
 <div class="split right">
   <form method="get">
     <button name="backBtn" formaction="/home" type="submit" style="transform:translate(10%);font-size:x-large">Back</button>
-</form>
+  </form>
   <div class="centered">
     <p style="font-size:xx-large;width:500px;background-color:darkslateblue;color:snow;border-color:black"><b>{{rows_org[0][1]}}</b></p>
     <br>
@@ -83,9 +76,6 @@ p { margin:5px }
     <p style="color:maroon;font-size:x-large"> <b>Not sure how to deal with the symptoms?</b></p>
     <p style="font-size:x-large"><a href="https://www.cancer.ca/en/cancer-information/diagnosis-and-treatment/managing-side-effects/" target="_blank">Visit this link</a></p>
   </div>
-    
-  
 </div>
-
 </body>
 </html> 

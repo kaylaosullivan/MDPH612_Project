@@ -97,27 +97,20 @@ def load_patient():
         conn = psycopg2.connect(database=DATABASE, user=USER, password=PASSWORD, host=HOST, port=PORT)
         cur = conn.cursor()
         cur.execute(query_img)
-        colms = [desc[0] for desc in cur.description]
         results_img = cur.fetchall()
 
         cur.execute(query_organ)
-        colms = [desc[0] for desc in cur.description]
         results_organ = cur.fetchall()
 
         cur.execute(query_name)
-        colms = [desc[0] for desc in cur.description]
         p_name = cur.fetchall()[0][0]
         print(p_name)
 
     else:
-        results = []
-    # if request.form.get('images'):
-    #     select_image = request.form.get('images')
-    # else:
-    #     select_image = ''
-    #print(results[1][2])
+        results_organ = []
+        results_img = []
+        p_name=""
 
-    #if request.method == 'POST':
     checked = 'showContours' in request.form
     print(checked)
 
@@ -175,7 +168,6 @@ def load_info():
         # results_img = cur.fetchall()
 
         cur.execute(query_organ)
-        colms = [desc[0] for desc in cur.description]
         results_organ = cur.fetchall()
 
 
@@ -184,10 +176,10 @@ def load_info():
     
     print(results_organ)
 
-    full_filename = session.get('image_path', None)
-    #org_file = "p"+str(p_id)+"_images/"+results_organ[0][1]+".png"
+    #full_filename = session.get('image_path', None)
     
-    #full_filename = os.path.join(app.config['ORGAN_FOLDER'], org_file)
+    org_file = "p"+str(p_id)+"_images/"+results_organ[0][1]+".png"
+    full_filename = os.path.join(app.config['ORGAN_FOLDER'], org_file)
 
     print(full_filename)
     return render_template("info.html", user_image = full_filename,

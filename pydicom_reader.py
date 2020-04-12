@@ -1,15 +1,10 @@
-#pydicom
 import os
 import pydicom
-#from pydicom.filereader import read_dicomdir
 import numpy as np
 import scipy
-# import cv2
 import csv
 from pil import Image, ImageDraw
-#import dicom
 import matplotlib.pyplot as plt
-
 from dicom_contour.contour import *
 
 def get_contour_file(path):
@@ -230,7 +225,7 @@ def get_cts(CT_files_path):
     # Build the z ordered 3D CT dataset array.
     ct_array = np.array([slices[i] for i in z])
 
-    print(ct_array.shape)    
+  
     # plt.imshow(ct_array[50,:,:], origin='lower')
     plt.imshow(ct_array[:,255,:], origin='lower')
     # plt.imshow(ct_array[:,:,255], origin='lower')
@@ -282,12 +277,7 @@ def plot_all_contours(roi_indices, colour_dict, slicenum, path):
         all_contours.append(contours)
         colours.append(colour_dict[index])
         #isFirst = False
-    print(len(images))
-    print(len(images[0]))
-    print(images)
-    print(images[0])
-    print(images[0][0])
-    #print(len)
+
     plot2dcontour_multi(images,all_contours,colours,slicenum)
 
 def plot_individual_contours(roi_indices, colour_dict, slicenum, path):
@@ -332,7 +322,7 @@ def main():
            26: 'blueviolet'
     }
    
-    patient = 1
+    patient = 4
     
     if (patient == 1):
         pslice = 208
@@ -349,10 +339,11 @@ def main():
     
     if patient == 4:
         pslice = 150
-        proi = [6,10,13,18,19,26]
+        proi = [6,18,19,26]
         
 
-    #plot_all_contours(proi,colour_dict, pslice, path)
+   #plot_all_contours([10,13],colour_dict, pslice, path)
+    #plot_all_contours([24,25],colour_dict, pslice, path)
     plot_individual_contours(proi,colour_dict, pslice, path)
     
 
