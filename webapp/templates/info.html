@@ -54,6 +54,7 @@ p { margin:5px }
 </head>
 
 <body>
+<!-- Left side: User Image and Organ Name -->
 <div class="split left">
   <div class="centered">
     <img src="{{ user_image }}" alt="User Image">
@@ -63,16 +64,20 @@ p { margin:5px }
   </div>
 </div>
 
+<!-- Right Side: Organ description, side effects and help link -->
 <div class="split right">
-  <form method="get">
+  <form method="GET">
+    <!-- Back Button -->
     <button name="backBtn" formaction="/home" type="submit" style="transform:translate(10%);font-size:x-large">Back</button>
   </form>
   <div class="centered">
+    <!-- Organ description and side-effects -->
     <p style="font-size:xx-large;width:500px;background-color:darkslateblue;color:snow;border-color:black"><b>{{rows_org[0][1]}}</b></p>
     <br>
     <p style="font-size:x-large;width:500px;text-align:left">{{rows_org[0][3] | safe}}</p>
     <br>
     <br>
+    <!-- Helpful Link -->
     <p style="color:maroon;font-size:x-large"> <b>Not sure how to deal with the symptoms?</b></p>
     <p style="font-size:x-large"><a href="https://www.cancer.ca/en/cancer-information/diagnosis-and-treatment/managing-side-effects/" target="_blank">Visit this link</a></p>
   </div>

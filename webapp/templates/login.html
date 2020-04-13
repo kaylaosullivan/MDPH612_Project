@@ -23,14 +23,19 @@
       <h1>Please login</h1>
       <br>
       <form action="" method="post">
+        <!-- Username Box -->
         <input type="text"  class="input" placeholder="Name" name="username" value="{{
           request.form.username }}" class="form-control input-lg">
           <br>
+        <!-- Password Box -->
          <input type="password" placeholder="Password" name="password" value="{{
           request.form.password }}"class="form-control input-lg">
           <br>
+        <!-- Login Button -->
         <input class="btn btn-default" type="submit" value="Login" style="background-color:lightcyan"> 
       </form>
+
+      <!-- Error (if failed login) -->
       {% if error %}
         <p style="font-size:x-large" class="error"><strong>Error:</strong> {{ error }}
       {% endif %}

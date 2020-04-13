@@ -7,304 +7,265 @@ from pil import Image, ImageDraw
 import matplotlib.pyplot as plt
 from dicom_contour.contour import *
 
-def get_contour_file(path):
+"""
+Modified from https://github.com/KeremTurgutlu/dicom-contour/blob/master/dicom_contour/contour.py 
+to read DICOM files with any naming convention (ie, no longer assumes SOAPInstanceIUD in file name)
+"""
+def coord2pixels(contour_dataset, path):
     """
-    Get contour file from a given path by searching for ROIContourSequence 
-    inside dicom data structure.
-    More information on ROIContourSequence available here:
-    http://dicom.nema.org/medical/dicom/2016c/output/chtml/part03/sect_C.8.8.6.html
+    Given a contour dataset (a DICOM class) and path that has .dcm files of
+    corresponding images. This function will return img_arr and contour_arr (2d image and contour pixels)
+    Inputs
+        contour_dataset: DICOM dataset class that is identified as (3006, 0016)  Contour Image Sequence
+        path: string that tells the path of all DICOM images
+    Return
+        img_arr: 2d np.array of image with pixel intensities
+        contour_arr: 2d np.array of contour with 0 and 1 labels
+    """
+
+    contour_coord = contour_dataset.ContourData
+    # x, y, z coordinates of the contour in mm
+    coord = []
+    for i in range(0, len(contour_coord), 3):
+        coord.append((contour_coord[i], contour_coord[i + 1], contour_coord[i + 2]))
+
+    # extract the image id corresponding to given countour
+    # read that dicom file
+    img_ID = contour_dataset.ContourImageSequence[0].ReferencedSOPInstanceUID
+    img_path = ""
     
-    Inputs:
-            path (str): path of the the directory that has DICOM files in it, e.g. folder of a single patient
-    Return:
-        contour_file (str): name of the file with the contour
-    """
-    # handle `/` missing
+    
+    ###### MODIFIED SECTION #######
     if path[-1] != '/': path += '/'
     # get .dcm contour file
-    fpaths = [path + f for f in os.listdir(path) if '.dcm' in f]
-    n = 0
-    #contour_file = 0
     
+    fpaths = [path + f for f in os.listdir(path) if '.dcm' in f]
+   
+    # Search through each file to match contour sequence to image with correct SOPInstanceUID
     for fpath in fpaths:
         f = dicom.read_file(fpath)
-        if 'ROIContourSequence' in dir(f):
-            contour_file = fpath.split('/')[-1]
-            n += 1
-        
-    if n > 1: warnings.warn("There are multiple files, returning the last one!")
-    print(contour_file)
-    return contour_file
-
-def cfile2pixels(file, path, ROIContourSeq=0):
-    """
-    Given a contour file and path of related images return pixel arrays for contours
-    and their corresponding images.
-    Inputs
-        file: filename of contour
-        path: path that has contour and image files
-        ROIContourSeq: tells which sequence of contouring to use default 0 (RTV)
-    Return
-        contour_iamge_arrays: A list which have pairs of img_arr and contour_arr for a given contour file
-    """
-    # handle `/` missing
-    if path[-1] != '/': path += '/'
-    f = dicom.read_file(path + file)
-    # index 0 means that we are getting RTV information
-    RTV = f.ROIContourSequence[ROIContourSeq]
-    # get contour datasets in a list
-    contours = [contour for contour in RTV.ContourSequence]
-    img_contour_arrays = [coord2pixels(cdata, path) for cdata in contours]
-    return img_contour_arrays
-
-
-
-def get_rt_structure(RT_struct_path):
-    files = [os.path.join(RT_struct_path, f) for f in os.listdir(RT_struct_path)]
-    if len(files) == 1:
-        RT_struct_file = files[0]
-    else:
-        print('Error')
-    ds = pydicom.read_file(RT_struct_file)
-    print(ds.Modality)
-    print (dir(ds))
-    print("----------------------------------")
-    dose_refs = []
-    dose_ref = ds.StructureSetROISequence
-    print(dir(dose_ref[0]))
-    print(dose_ref[0].ROIName)
-    for dose in dose_ref:
-        # print dose.dir()
-        if 'DoseReferencePointCoordinates' in dose.dir():
-            dose_refs.append(dose.ROIName)
-    # print '------>', dose_refs
-    return dose_refs
-
-
-def slice_order(path):
-    """
-    Takes path of directory that has the DICOM images and returns
-    a ordered list that has ordered filenames
-    Inputs
-        path: path that has .dcm images
-    Returns
-        ordered_slices: ordered tuples of filename and z-position
-    """
-    # handle `/` missing
-    if path[-1] != '/': path += '/'
-    slices = []
-    for s in os.listdir(path):
-        try:
-            f = dicom.read_file(path + '/' + s)
-            f.pixel_array  # to ensure not to read contour file
-            slices.append(f)
-        except:
-            continue
-
-    slice_dict = {s.SOPInstanceUID: s.ImagePositionPatient[-1] for s in slices}
-    ordered_slices = sorted(slice_dict.items(), key=operator.itemgetter(1))
-    return ordered_slices
-
-#def get_data(path, index):
-#    """
-#    Generate image array and contour array
-#    Inputs:
-#        path (str): path of the the directory that has DICOM files in it
-#        contour_dict (dict): dictionary created by get_contour_dict
-#        index (int): index of the desired ROISequence
-#    Returns:
-#        images and contours np.arrays
-#    """
-#    images = []
-#    contours = []
-#    # handle `/` missing
-#    if path[-1] != '/': path += '/'
-#    # get contour file
-#    contour_file = get_contour_file(path)
-#    # get slice orders
-#    ordered_slices = slice_order(path)
-#    # get contour dict
-#    contour_dict = get_contour_dict(contour_file, path, index)
-#    fpaths = [path + f for f in os.listdir(path) if '.dcm' in f]
-#    n = 0 
-#    for k,v in ordered_slices:
-#        
-#        for fpath in fpaths:
-#            f = dicom.read_file(fpath)
-#            if f.SOPInstanceUID == k:
-#                img_path = fpath  
-#                fpaths.remove(fpath)
-#                break
-#                
-#        
-#        # get data from contour dict
-#        if k in contour_dict:
-#            images.append(contour_dict[k][0])
-#            contours.append(contour_dict[k][1])
-#           # print(n," ",contour_dict[k][1].max())
-#        # get data from dicom.read_file
-#        else:
-#            #img_arr = dicom.read_file(path + k + '.dcm').pixel_array
-#            img_arr = dicom.read_file(img_path).pixel_array
-#            contour_arr = np.zeros_like(img_arr)
-#            images.append(img_arr)
-#            contours.append(contour_arr)
-#        n+=1
-#    return np.array(images), np.array(contours)
-
-
-def convert_dose(RT_dose_path):
-    files = [os.path.join(RT_dose_path, f) for f in os.listdir(RT_dose_path)]
-    if len(files) == 1:
-        RT_dose_file = files[0]
-    else:
-        print('Error')
-    ds = pydicom.read_file(RT_dose_file)
-    # print ds.dir()
-    dose_pixel = ds.pixel_array
-    # print len(ds.PixelData)
-    # print dose_pixel.shape
-
-    rows = ds.Rows
-    columns = ds.Columns
-    pixel_spacing = ds.PixelSpacing
-    image_position = ds.ImagePositionPatient
-    # print 'DS', image_position
-    x = np.arange(columns)*pixel_spacing[0] + image_position[0]
-    y = np.arange(rows)*pixel_spacing[1] + image_position[1]
-    z = np.array(ds.GridFrameOffsetVector) + image_position[2]
-    beam_center = (np.argmin(abs(x)),np.argmin(abs(y)),np.argmin(abs(z)))
-    return dose_pixel, x,y,z, pixel_spacing
-
-def get_cts(CT_files_path):
-    CT_files = [os.path.join(CT_files_path, f) for f in os.listdir(CT_files_path)]
-    slices = {}
-    for ct_file in CT_files:
-        ds = pydicom.read_file(ct_file)
-
-        # Check to see if it is an image file.
-        # print ds.SOPClassUID
-        if ds.SOPClassUID == '1.2.840.10008.5.1.4.1.1.2':
-            #
-            # Add the image to the slices dictionary based on its z coordinate position.
-            #
-            slices[ds.ImagePositionPatient[2]] = ds.pixel_array
-        else:
-            pass
-
-    # The ImagePositionPatient tag gives you the x,y,z coordinates of the center of
-    # the first pixel. The slices are randomly accessed so we don't know which one
-    # we have after looping through the CT slice so we will set the z position after
-    # sorting the z coordinates below.
-    image_position = ds.ImagePositionPatient
-    # print 'CT', image_position
-    # Construct the z coordinate array from the image index.
-    z = slices.keys()
-    z = sorted(z)
-    ct_z = np.array(z)
-
-    image_position[2] = ct_z[0]
-
-    # The pixel spacing or planar resolution in the x and y directions.
-    ct_pixel_spacing = ds.PixelSpacing
-
-    # Verify z dimension spacing
-    b = ct_z[1:] - ct_z[0:-1]
-    # z_spacing = 2.5 # Typical spacing for our institution
-    if b.min() == b.max():
-         z_spacing = b.max()
-    else:
-        print ('Error z spacing in not uniform')
-        z_spacing = 0
-
-    # print z_spacing
-
-    # Append z spacing so you have x,y,z spacing for the array.
-    ct_pixel_spacing.append(z_spacing)
-
-    # Build the z ordered 3D CT dataset array.
-    ct_array = np.array([slices[i] for i in z])
-
-  
-    # plt.imshow(ct_array[50,:,:], origin='lower')
-    plt.imshow(ct_array[:,255,:], origin='lower')
-    # plt.imshow(ct_array[:,:,255], origin='lower')
-    plt.show()
-    # Now construct the coordinate arrays
-    # print ct_pixel_spacing, image_position
-    x = np.arange(ct_array.shape[2])*ct_pixel_spacing[0] + image_position[0]
-    y = np.arange(ct_array.shape[1])*ct_pixel_spacing[1] + image_position[1]
-    z = np.arange(ct_array.shape[0])*z_spacing + image_position[2]
-    # print x
-    # print image_position[0], image_position[1], image_position[2]
-    # print ct_pixel_spacing[0], ct_pixel_spacing[1], ct_pixel_spacing[2]
-    # print x, y
-    # print (len(x), len(y))
-    # # The coordinate of the first pixel in the numpy array for the ct is then  (x[0], y[0], z[0])
-    return ct_array, x,y,z, ct_pixel_spacing
-
-#def initialize(path):
-#    contour_file = get_contour_file(path)
-#    ordered_slices = slice_order(path)
-#    return ordered_slices, contour
+        if f.SOPInstanceUID == img_ID:
+            img_path = fpath  
+            break            
+       
+    img = dicom.read_file(img_path)
+    ###############################    
     
+    img_arr = img.pixel_array
+
+    # physical distance between the center of each pixel
+    x_spacing, y_spacing = float(img.PixelSpacing[0]), float(img.PixelSpacing[1])
+
+    # this is the center of the upper left voxel
+    origin_x, origin_y, _ = img.ImagePositionPatient
+ 
+    # y, x is how it's mapped
+    pixel_coords = [(np.ceil((y - origin_y) / y_spacing), np.ceil((x - origin_x) / x_spacing)) for x, y, _ in coord]
+
+    # get contour data for the image
+    rows = []
+    cols = []
+    for i, j in list(set(pixel_coords)):
+        rows.append(i)
+        cols.append(j)
+    contour_arr = csc_matrix((np.ones_like(rows), (rows, cols)), dtype=np.int8, shape=(img_arr.shape[0], img_arr.shape[1])).toarray()
+
+    return img_arr, contour_arr, img_ID
+
+"""
+Modified from https://github.com/KeremTurgutlu/dicom-contour/blob/master/dicom_contour/contour.py 
+to read DICOM files with any naming convention (ie, no longer assumes SOAPInstanceIUD in file name)
+and to have the option to input the ordered slices, contour file and image path to improve efficiency
+when plotting multiple contours at once.
+"""
+def get_data(path, index, ordered_slices = 0, contour_file = 0, img_path = 0):
+    """
+    Generate image array and contour array
+    Inputs:
+        path (str): path of the the directory that has DICOM files in it
+        contour_dict (dict): dictionary created by get_contour_dict
+        index (int): index of the desired ROISequence
+        
+        Optional:
+            ordered_slices: ordered tuples of filename and z-position (obtained from slice_order function in contour.py)
+            contour_file: name of the contour file
+            img_path: put any DICOM file path if you only plan to look at slices where all of your input contours exist, if
+                      you need all slices to be accurate, leave as 0 
+                      (NEEDS WORK TO BE EFFICIENT)
+    Returns:
+        images and contours np.arrays
+    """
+    images = []
+    contours = []
+    # handle `/` missing
+    if path[-1] != '/': path += '/'
+    # get contour file
+    if (contour_file == 0):
+        contour_file = get_contour_file(path)
+    # get slice orders
+    if(ordered_slices == 0):
+        ordered_slices = slice_order(path)
+    # get contour dict
+    contour_dict = get_contour_dict(contour_file, path, index)
+    fpaths = [path + f for f in os.listdir(path) if '.dcm' in f]
+    n = 0 
+    for k,v in ordered_slices:
+        
+        #### MODIFIED #####
+        if (img_path ==0):
+            # Search through each file to match contour sequence to image with correct SOPInstanceUID
+            for fpath in fpaths:
+                f = dicom.read_file(fpath)
+                if f.SOPInstanceUID == k:
+                    img_path = fpath  
+                    fpaths.remove(fpath)
+                    break
+                
+        # get data from contour dict
+        if k in contour_dict:
+            images.append(contour_dict[k][0])
+            contours.append(contour_dict[k][1])
+           # print(n," ",contour_dict[k][1].max())
+        # get data from dicom.read_file
+        else:
+            img_arr = dicom.read_file(img_path).pixel_array
+            contour_arr = np.zeros_like(img_arr)
+            images.append(img_arr)
+            contours.append(contour_arr)
+        n+=1
+        ####################
+    return np.array(images), np.array(contours)
+
+"""
+Function to get specified slice from images and array of all specified contours at same slice
+"""
+def get_slice(images, multi_contours, slicenum):
+    '''
+    Input:
+        images: all slices of CT scan
+        multi_contours: array of all contours specified at all slices
+    Output: 
+        Array of image pixels at specified slice
+        Array of arrays of contours at specified slice
+    '''
+    image_arr = images[slicenum]
+    contour_arr = []
+    
+    for i in range(len(multi_contours)):
+        contour_arr.append(multi_contours[i][slicenum])    
+    return image_arr, contour_arr
+
+
+"""
+Function to plot multiple specified contours on a given slice
+"""
+def plot2dcontour_multi(images, contours, colours, slicenum=1, figsize=(20, 20)):
+    """
+    Inputs
+        images: image slices array with pixel intensities
+        contours: multiple contour array with pixels of 1 and at all slices
+        colours: array of colours corresponding to contours array
+        slicenum: slice you want to generate
+    """
+    
+    img_arr, contour_arr = get_slice(images, contours, slicenum)
+
+    # Plot CT slices without contours
+    plt.figure(figsize=figsize)
+    plt.subplot(1, 2, 1)
+    plt.imshow(img_arr, cmap='gray', interpolation='none')
+    plt.subplot(1, 2, 2)
+    plt.imshow(img_arr, cmap='gray', interpolation='none')
+    
+    # Plot contours
+    for index in range(len(colours)):
+        masked_contour_arr = np.ma.masked_where(contour_arr[index] == 0, contour_arr[index])
+        # Create custom colour map for each contour
+        cmap = colors.ListedColormap([colours[index]])
+        bounds=[1]
+        norm = colors.BoundaryNorm(bounds, cmap.N)
+        # Plot
+        plt.imshow(masked_contour_arr, cmap=cmap, interpolation='none', alpha=1, norm=norm)
+        
+    plt.show()
+
+
+"""
+Function to prepare data and call necessary functions to plot multiple contours on the same CT slice
+"""    
 def plot_all_contours(roi_indices, colour_dict, slicenum, path):
+    '''
+    Input:
+        roi_indices: Indices of ROIs to plot (indices according to how they appear in "get_roi_names")
+        colour_dict: dict mapping each ROI index to desired contour colour
+        slicenum: desired slice number to display
+        path: path to DICOM files
+    '''
+    # Get contour file and contour names
     contour_file = get_contour_file(path)
     contour_data = dicom.read_file(path + '/' + contour_file)
     roi_names = get_roi_names(contour_data)
     
     all_contours = []
     colours = []
-    #isFirst = True
     
-    contour_file = get_contour_file(path)
     # get slice orders
     ordered_slices = slice_order(path)
     
-    fpaths = [path + f for f in os.listdir(path) if '.dcm' in f]
-    for k,v in ordered_slices:
-        for fpath in fpaths:
-            f = dicom.read_file(fpath)
-            if f.SOPInstanceUID == k:
-                img_path = fpath  
-                fpaths.remove(fpath)
-                break
+    # make into dict in future
+#    fpaths = [path + f for f in os.listdir(path) if '.dcm' in f]
+#    for k,v in ordered_slices:
+#        for fpath in fpaths:
+#            f = dicom.read_file(fpath)
+#            if f.SOPInstanceUID == k:
+#                img_path = fpath  
+#                fpaths.remove(fpath)
+#                #print(img_path)
+#                break
     
+    # Retrieve image and contour pixel data
     for index in roi_indices:
         print("Index ",index,": ",roi_names[index])
-     
-        images, contours = get_data(path, index=index, ordered_slices=ordered_slices, contour_file=contour_file,img_path=img_path)
+        
+        images, contours = get_data(path, index=index, ordered_slices=ordered_slices, contour_file=contour_file,img_path='./SAMPLE_DICOM/CT/000213.dcm')
         all_contours.append(contours)
         colours.append(colour_dict[index])
-        #isFirst = False
 
+    # generate plots
     plot2dcontour_multi(images,all_contours,colours,slicenum)
 
+
+
+"""
+Function to plot multiple specified contours individually on a given slice
+"""
 def plot_individual_contours(roi_indices, colour_dict, slicenum, path):
+    '''
+    Input:
+        roi_indices: Indices of ROIs to plot (indices according to how they appear in "get_roi_names")
+        colour_dict: dict mapping each ROI index to desired contour colour
+        slicenum: desired slice number to display
+        path: path to DICOM files
+    '''
     for roi in roi_indices:
         plot_all_contours([roi], colour_dict, slicenum, path)
         
         
 
 def main():
+    # relevant paths
     RT_dose_path = './SAMPLE_DICOM/RTdose'
     RT_struct_path = './SAMPLE_DICOM/RTstruct'
     CT_files_path = './SAMPLE_DICOM/CT/'
-    #path = './SAMPLE_DICOM/CT/000005.dcm'
-#    get_cts(CT_files_path)
-#    get_cts('./example/ct0.dcm')
-    # print(convert_dose(RT_dose_path))
-    # get_rt_structure(RT_struct_path)
     
+    # Get DICOM file and show ROI names available
     path = CT_files_path
-#    contour_file = get_contour_file(path)
-#    contour_data = dicom.read_file(path + '/' + contour_file)
-#    roi_names = get_roi_names(contour_data)
-#    print("ROI Names: ", roi_names)
+    contour_file = get_contour_file(path)
+    contour_data = dicom.read_file(path + '/' + contour_file)
+    roi_names = get_roi_names(contour_data)
+    print("ROI Names: ", roi_names)
 
-    # ordered files
-#    ordered_slices = slice_order(path)
-    
+    # Dictionary mapping colours to ROI indices
     colour_dict = {
            6: 'lime',
            7: 'yellow',
@@ -322,13 +283,14 @@ def main():
            26: 'blueviolet'
     }
    
-    patient = 4
+    
+    # Patient slices and contours to generate
+    patient = 3
     
     if (patient == 1):
         pslice = 208
         proi = [6,7,21,22,23,24,25]
        
-        
     if patient == 2:
         pslice = 179
         proi = [6,7,10,13,16,18,19,26]
@@ -339,38 +301,13 @@ def main():
     
     if patient == 4:
         pslice = 150
-        proi = [6,18,19,26]
+        proi = [6,10,13,18,19,26]
         
-
-   #plot_all_contours([10,13],colour_dict, pslice, path)
-    #plot_all_contours([24,25],colour_dict, pslice, path)
-    plot_individual_contours(proi,colour_dict, pslice, path)
+ 
+    plot_all_contours(proi,colour_dict, pslice, path)
+    #plot_individual_contours(proi,colour_dict, pslice, path)
     
 
-#    for index in indices:
-#        
-#        print("Index ",index,": ",roi_names[index])
-#        images, contours = get_data(path, index=index)
-    
-    # Get contour locations
-#    indices = [24,25]
-#    colours = ['red','cyan']
-#    all_contours = []
-#
-#
-##    
-#    for index in indices:
-#        
-#        print("Index ",index,": ",roi_names[index])
-#        images, contours = get_data(path, index=index)
-#        all_contours.append(contours)
-#    plot2dcontour_multi(images,all_contours,colours,208)
-#        
-    
-#    
-   # for img_arr, contour_arr in zip(images[207:208], contours[0][0][207:208]):
-#        #plot2dcontour(img_arr, contour_arr)
-#        plot2dcontour_multi(img_arr,all_contours,colours)
-###   
+
 if __name__ == "__main__":
    main()
