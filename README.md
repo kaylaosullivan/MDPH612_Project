@@ -1,6 +1,19 @@
 # MDPH612_Project
 DICOM reader for displaying multiple contours and webapp for patients to view their CT scan, browse their contoured organs and view side effects corresponding to each one.
 
+### Requirements
+`Python 3`
+
+Packages: 
+* numpy
+* pydicom
+* matplotlib
+* Pillow
+* psycopg2
+* Flask
+* dicom-contour
+
+
 ## pydicom_reader.py
 My code uses direct and modified code from [dicom-contour](https://github.com/KeremTurgutlu/dicom-contour)
 
